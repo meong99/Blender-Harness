@@ -1,0 +1,29 @@
+name: Harness release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Test installer and workflow rules
+        run: python -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Check tag and build distributable
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python -c "import json,os; v=json.load(open('harness/defaults.json'))['version']; assert os.environ['RELEASE_TAG']=='v'+v"
+          python harness/cli.py bundle --out "dist/blenderwright-harness-${RELEASE_TAG}.zip"
+      - name: Publish versioned ZIP and manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: gh release create "$RELEASE_TAG" dist/*.zip dist/*.manifest.json --verify-tag --generate-notes

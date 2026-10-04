@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "intent": "Example cabinet: one closed cabinet body; handle remains an intentionally separate component. Agent replaces this plan per request; references require calibrated reference views and landmarks.",
+  "continuous": [{"name": "cabinet shell", "objects": ["CabinetBody"], "closed": true}],
+  "separate": [],
+  "views": [{"name": "shell_closeup", "role": "joint", "location": [0.3, -0.5, 0.3], "target": [0, 0, 0.14], "type": "ORTHO", "ortho_scale": 0.15}]
+}

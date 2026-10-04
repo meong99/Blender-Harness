@@ -1,0 +1,23 @@
+{
+  "version": "1.2.0",
+  "backend": "blenderwright",
+  "backend_commit": "987a12266f19e9dfd57704541d2c22429dbb1445",
+  "scope": "blender_only",
+  "target_minutes": 15,
+  "target_is_soft": true,
+  "process_timeout_seconds": 300,
+  "recommended_visual_revisions": 2,
+  "auto_micro_repair": false,
+  "quality_plan_required": true,
+  "quality": {"resolution": [640, 640], "samples": 16},
+  "draft": {"resolution": [512, 568], "samples": 16},
+  "final": {"resolution": [1080, 1200], "samples": 64},
+  "body_views": ["front", "side", "back"],
+  "detail_views": ["hero"],
+  "final_views": ["hero", "back", "hero_clay", "back_clay"],
+  "verify_saved_file_once": true,
+  "units": "metres",
+  "front": "-Y",
+  "pivot": "bottom_center",
+  "token_policy": "explicit session log snapshots; unknown when unavailable; no token estimates"
+}

@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+/runs/
+/dist/
+/.blender-harness/
+.env
+.env.*
+*.blend
+*.blend1
+*.png
+*.jpg
+*.jpeg
+*.jsonl
