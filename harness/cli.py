@@ -5,6 +5,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'harness'))
 from quality_plan import validate as validate_quality_plan, require_pass
+from visual_gate import validate_requirements, evaluate as evaluate_visual, require_final
 def now():return dt.datetime.now(dt.timezone.utc).isoformat()
 def read(p):return json.loads(Path(p).read_text(encoding='utf-8-sig'))
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
@@ -62,6 +63,10 @@ def report(run,m):
   if rev.get('preview_paths'):
    for image in rev['preview_paths']:lines.append(f'\n![{rev["id"]} {Path(image).stem}]({(run/image).as_posix()})')
   if rev.get('review'):lines.append('\n검수: '+rev['review']['notes'])
+  if rev.get('review',{}).get('visual'):
+   visual=rev['review']['visual']
+   lines.append('\n시안 필수 항목: '+', '.join(k+'='+v['status'] for k,v in visual['requirements'].items()))
+   lines.append('\n미해결 시각 결함: '+(', '.join(k for k,v in visual['defects'].items() if v['status']=='open') or '없음'))
   if rev.get('surface_reference_quality'):
    q=rev['surface_reference_quality'];lines.append(f'\n연결·시안 수치 검사: {q["passed"]} · [확대/기준점 비교]({q["report"]})')
  (run/'report.md').write_text('\n'.join(lines)+'\n',encoding='utf-8')
@@ -108,7 +113,7 @@ def main():
  new.add_argument('--quality-plan')
  stage=sub.add_parser('stage');stage.add_argument('--run',required=True);stage.add_argument('--phase',choices=['body','detail','edit'],required=True);stage.add_argument('--source',required=True);stage.add_argument('--base');stage.add_argument('--targets',nargs='+');stage.add_argument('--views',nargs='+',choices=['hero','front','side','back'])
  review=sub.add_parser('review');review.add_argument('--run',required=True);review.add_argument('--revision',required=True);review.add_argument('--decision',choices=['pass','partial','revise'],required=True);review.add_argument('--notes',required=True);review.add_argument('--reviewer',default='agent')
- review.add_argument('--surface-notes');review.add_argument('--reference-notes')
+ review.add_argument('--surface-notes');review.add_argument('--reference-notes');review.add_argument('--visual-review')
  final=sub.add_parser('finalize');final.add_argument('--run',required=True);final.add_argument('--base',required=True)
  status=sub.add_parser('status');status.add_argument('--run',required=True)
  pack=sub.add_parser('bundle');pack.add_argument('--out',required=True)
@@ -142,6 +147,7 @@ def main():
   settings=read(ROOT/'harness/defaults.json')
   if settings.get('quality_plan_required') and not a.quality_plan:raise ValueError('Agent must prepare --quality-plan; user does not need to write it')
   plan=validate_quality_plan(read(a.quality_plan),len(a.reference)) if a.quality_plan else None
+  if settings.get('visual_gate_required'):validate_requirements(plan,len(a.reference))
   for path in a.reference:
    if not Path(path).is_file():raise FileNotFoundError(path)
   if a.target_minutes is not None:
@@ -167,6 +173,7 @@ def main():
   qp=m['quality_plan']
   if sha(run/qp['path'])!=qp['sha256']:raise ValueError('Quality plan changed; start a new run instead of moving the acceptance criteria')
   plan=validate_quality_plan(read(run/qp['path']),len(m['references']))
+  if m['defaults'].get('visual_gate_required'):validate_requirements(plan,len(m['references']))
  if a.cmd=='status':report(run,m);print(json.dumps({'run':a.run,'status':m['status'],'revisions':[{k:r.get(k) for k in ['id','phase','status','seconds']} for r in m['revisions']],'tokens':m['token_usage']},ensure_ascii=False));return
  if m['status']=='completed' and a.cmd in ['stage','review']:raise ValueError('Completed run is immutable; start a new run for further work')
  if a.cmd=='review':
@@ -175,11 +182,18 @@ def main():
   if not rev.get('preview_paths'):raise ValueError('No rendered evidence')
   require_pass(rev,a.decision)
   if plan is not None and (not a.surface_notes or not a.reference_notes):raise ValueError('Record --surface-notes and --reference-notes after inspecting evidence; explain N/A when appropriate')
+  visual=None
+  if m['defaults'].get('visual_gate_required'):
+   if not a.visual_review:raise ValueError('Provide --visual-review JSON with per-feature image comparisons and defect resolutions')
+   visual=evaluate_visual(run,m,rev,plan,read(a.visual_review),a.decision)
   rev['review']={'decision':a.decision,'notes':a.notes,'reviewer':a.reviewer,'timestamp':now(),'blend_sha256':sha(run/rev['blend']),'preview_hashes':{im:sha(run/im) for im in rev['preview_paths']}}
   if plan is not None:
    q=rev['surface_reference_quality'];rev['review'].update(surface_notes=a.surface_notes,reference_notes=a.reference_notes,evidence_hashes={p:sha(run/p) for p in [q['report'],q['evidence_json']]})
+  if visual is not None:
+   rev['review']['visual']=visual
+   m['visual_requirements']=visual['requirements'];m['visual_defects']=visual['defects'];m['visual_latest_revision']=rev['id']
   rev['status']='reviewed' if a.decision!='revise' else 'needs_revision'
-  m['status']='completed' if rev['phase']=='final' and a.decision!='revise' else 'needs_revision' if a.decision=='revise' else 'ready'
+  m['status']='completed' if rev['phase']=='final' and a.decision=='pass' else 'needs_revision' if a.decision=='revise' or rev['phase']=='final' else 'ready'
   if m['status']=='completed':m['quality']='passed' if a.decision=='pass' else 'partial';m['delivered_blend']=rev['blend'];m['completed']=now()
   report(run,m);print(m['status']);return
  base=None
@@ -189,8 +203,11 @@ def main():
   if base['phase'] not in ['detail','edit']:raise ValueError('Finalize a reviewed detail/edit checkpoint')
   existing=next((r for r in m['revisions'] if r['phase']=='final' and r.get('base_hash')==sha(run/base['blend']) and r['status']!='failed'),None)
   if existing:
+   require_final(m,existing if m['status']=='completed' else base)
+   if m['status']=='completed':require_review(run,existing)
    if sha(run/existing['blend'])!=existing.get('blend_sha256'):raise ValueError('Final artifact changed; recover or make a new revision')
    print(json.dumps({'reused':existing['id'],'reason':'same reviewed checkpoint; no repeated final render/reopen'}));return
+  require_final(m,base)
   phase='final';source=None;views=m['defaults']['final_views']
  else:
   phase=a.phase

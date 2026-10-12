@@ -1,5 +1,5 @@
 {
-  "version": "1.2.0",
+  "version": "1.3.0",
   "backend": "blenderwright",
   "backend_commit": "987a12266f19e9dfd57704541d2c22429dbb1445",
   "scope": "blender_only",
@@ -9,6 +9,7 @@
   "recommended_visual_revisions": 2,
   "auto_micro_repair": false,
   "quality_plan_required": true,
+  "visual_gate_required": true,
   "quality": {"resolution": [640, 640], "samples": 16},
   "draft": {"resolution": [512, 568], "samples": 16},
   "final": {"resolution": [1080, 1200], "samples": 64},

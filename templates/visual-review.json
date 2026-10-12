@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "revision": "001_body",
+  "inspected_images": ["REPLACE_WITH_EVERY_CURRENT_PREVIEW_PATH"],
+  "requirements": [
+    {
+      "id": "shell_shape",
+      "status": "uncertain",
+      "observed": "REPLACE after actually comparing the reference with both camera views; describe the concrete difference.",
+      "evidence": ["renders/001_body_quality_shell_closeup.png", "renders/001_body_quality_shell_side.png"]
+    },
+    {
+      "id": "shell_junction",
+      "status": "fail",
+      "observed": "EXAMPLE ONLY: unintended notch remains at the required filled junction.",
+      "evidence": ["renders/001_body_quality_shell_closeup.png", "renders/001_body_quality_shell_side.png"]
+    }
+  ],
+  "defects": [
+    {
+      "id": "junction_notch",
+      "requirement_id": "shell_junction",
+      "status": "open",
+      "description": "EXAMPLE ONLY: rebuild the filled junction, then compare both views again.",
+      "evidence": ["renders/001_body_quality_shell_closeup.png", "renders/001_body_quality_shell_side.png"]
+    }
+  ]
+}

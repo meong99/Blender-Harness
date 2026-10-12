@@ -1,4 +1,22 @@
-# 공통 제작 절차 v1.2.0
+# 공통 제작 절차 v1.3.0
+
+## 시안 기준의 필수 시각 검수와 완료 차단
+
+시안의 형태가 최종 판단 기준이다. 단면 오차, 연결 성분, 열린 경계 등의 수치는 보조 자료이며 시각적 불일치를 상쇄하지 않는다. 에이전트가 실제 이미지를 열고 비교한다. 검수 기록을 작성하는 것만으로 결함을 수정한 것으로 취급하지 않는다.
+
+1. 제작 전에 quality-plan의 `visual_requirements`에 시안에서 반드시 재현할 부위별 실루엣·볼륨·접합부를 적는다. 전체 바운딩 박스만으로 대신하지 않는다. 각 항목에 고유 id, 구체적인 `expected`, 서로 다른 카메라의 품질 view 이름 두 개 이상, 입력 이미지가 있으면 `reference_indices`를 지정한다. 이 계획은 기존 계획과 함께 해시로 고정된다.
+2. 렌더 뒤 시안과 같은 방향·비율의 이미지 및 접합부 확대를 실제로 비교한다. 모든 기본/집중 프리뷰를 확인한다. 이미지에서 보이는 필수 형태와 다르면 수치가 통과해도 `fail`, 확인할 수 없으면 `uncertain`으로 기록한다. 가려진 이미지의 추정 두께를 실측 사실로 바꾸지 않는다.
+3. `templates/visual-review.json`을 작업별로 작성하고 `review --visual-review <파일>`로 제출한다. `inspected_images`는 현재 프리뷰 전체, `requirements`는 고정 항목 전체를 정확히 한 번 포함한다. 각 항목의 `observed`에는 실제 차이를, `evidence`에는 지정 시점들의 현재 렌더 경로를 적는다. 추가로 발견한 시각 결함은 고유 id와 관련 requirement를 가진 `defects`에 `open`으로 남긴다. 결함이 없으면 실제 확인 후 빈 목록을 쓴다.
+4. 불합격/불확실 항목과 열린 결함은 수정 단계로 이어진다. `partial`은 보존할 수 있는 수정 출발점일 뿐 완료 승인이 아니다. 다음 검수에서 열린 결함을 누락할 수 없다. 해결 시 새로 달라진 체크포인트의 재검수 증거와 `repair: {"action": "구체적인 수정 내용", "before_images": ["이전 증거 경로 전체"]}`를 기록한다. 항목은 `pass`, 결함은 `resolved`로 판정하되 수정 부위 주변의 손상도 재확인한다.
+5. `finalize`는 최신 검수본이 `pass`이고 필수 항목 전체 통과 및 미해결 결함 0개일 때만 실행된다. 이전 pass 검수본을 골라 이후의 결함을 우회할 수 없다. 최종 컬러/클레이 4장도 다시 검수하며 final의 `partial`/`revise`는 완료가 아니라 `needs_revision`이다. 최종 렌더에서 새 결함이 보이면 마지막 편집본을 기준으로 수정하고 다시 검수한다.
+
+사용자가 명시적으로 범위를 바꾸지 않았다면 필수 결함을 ‘한계’, ‘추정’, ‘시간 부족’, ‘검수본’으로 재분류해서 완료하지 않는다. 자동 생성한 문구는 사용자 범위 변경의 증거가 아니다. 실제 범위 변경이 있을 때만 그 사용자 지시를 기록한 새 실행을 만든다. 스키마에는 임의 면제/waived 상태를 제공하지 않는다.
+
+예: 손이라면 엄지 뿌리의 채워진 볼륨, 검지와 엄지 사이 곡면, 연결 각도를 따로 지정한다. 연결 성분 하나여도 시안과 달리 파인 공간이 남으면 불합격이다. 같은 렌더의 검수 문구만 바꿔 통과시킬 수 없다.
+
+이 게이트는 기록 누락·미해결 상태·증거 변경·이전 검수본 우회를 차단한다. 이미지 내용을 이해하거나 에이전트가 실제로 보았는지 증명하는 자동 비전 판정기는 아니다. 구체적인 시안 비교 판단은 에이전트 책임으로 남는다. 의미 없는 pass 선언을 기술적으로 완전히 방지한다고 주장하지 않는다.
+
+v1.2 이하 기존 실행의 계획·결과를 소급 수정하지 않는다. 기존 실행도 새 CLI에서 finalize할 때는 pass가 필요하고 final partial은 완료되지 않는다. 부위별 증거 게이트는 v1.3으로 새로 생성한 실행부터 적용된다.
 
 ## 기존 프로젝트 설치와 업데이트
 
@@ -47,9 +65,9 @@ v1.1부터 에이전트가 `templates/quality-plan.json`을 참고하여 품질 
 
 ```text
 stage --run ID --phase body --source builder.py
-review --run ID --revision 001_body --decision pass --notes "실루엣·비율·접지 검수 결과"
+review --run ID --revision 001_body --decision pass --visual-review body-review.json --surface-notes "접합부 비교" --reference-notes "시안 비교" --notes "실루엣·비율·접지 검수 결과"
 stage --run ID --phase detail --source builder.py --base 001_body
-review --run ID --revision 002_detail --decision pass --notes "형상·재질·특징 검수 결과"
+review --run ID --revision 002_detail --decision pass --visual-review detail-review.json --surface-notes "접합부 비교" --reference-notes "시안 비교" --notes "형상·재질·특징 검수 결과"
 ```
 
 - 몸체는 512×568, 16샘플 클레이 앞·옆·뒤 3장이다. **실제 이미지를 연 후** 비율·실루엣·접지·찌그러짐을 검수한다. 기록만 작성해 통과시키지 않는다.
@@ -63,11 +81,11 @@ review --run ID --revision 002_detail --decision pass --notes "형상·재질·�
 
 ```text
 finalize --run ID --base <검수한 detail 또는 edit ID>
-review --run ID --revision <출력된 final ID> --decision pass --notes "최종 컬러·클레이 4장 실제 검수 결과"
+review --run ID --revision <출력된 final ID> --decision pass --visual-review final-review.json --surface-notes "접합부 비교" --reference-notes "시안 비교" --notes "최종 컬러·클레이 4장 실제 검수 결과"
 status --run ID
 ```
 
-최종은 1080×1200, 64샘플 컬러 앞 사선·뒤와 클레이 앞 사선·뒤 4장이다. 저장본을 독립 프로세스에서 한 번 재열어 형상, 소스·참조 패킹을 확인한다. 같은 기준 파일의 finalize 재호출은 기존 결과를 반환한다. 검수 후 completed가 되며, 한계가 남으면 partial을 기록한다. 실패 실행은 검수 통과로 바꿀 수 없다. 완료 실행은 보존하고 추가 작업은 새 실행에서 한다.
+최종은 1080×1200, 64샘플 컬러 앞 사선·뒤와 클레이 앞 사선·뒤 4장이다. 저장본을 독립 프로세스에서 한 번 재열어 형상, 소스·참조 패킹을 확인한다. 같은 기준 파일의 finalize 재호출은 기존 결과를 반환한다. 최종 pass 검수 후에만 completed가 된다. partial은 needs_revision으로 남겨 수정한다. 실패 실행은 검수 통과로 바꿀 수 없다. 완료 실행은 보존하고 추가 작업은 새 실행에서 한다.
 
 자동 메시 진단은 참고 지표다. 극소 면·모서리 수를 0으로 만들기 위해 전역 재메싱하거나 반복 정리하지 않는다. 눈에 보이는 결함, 의도하지 않은 관통·틈·울퉁불퉁함은 고친다. 프리뷰 검수와 저장 확인을 생략하는 방식으로 시간을 줄이지 않는다.
 
