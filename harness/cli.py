@@ -1,12 +1,11 @@
 """Portable, agent-guided Blender workflow. Standard library only; no model API call."""
-import argparse, datetime as dt, hashlib, json, os, re, shutil, subprocess, sys, time, uuid, zipfile
+import argparse, datetime as dt, hashlib, json, os, re, shutil, subprocess, sys, uuid, zipfile
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'harness'))
 from quality_plan import validate as validate_quality_plan, require_pass
 from visual_gate import validate_requirements, evaluate as evaluate_visual, require_final
-def now():return dt.datetime.now(dt.timezone.utc).isoformat()
 def read(p):return json.loads(Path(p).read_text(encoding='utf-8-sig'))
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 def write(p,value):
@@ -23,41 +22,15 @@ def runtime():
  paths+=list(Path('/Applications').glob('Blender*.app/Contents/MacOS/Blender'))
  if paths:return str(sorted(paths,key=lambda p:tuple(map(int,re.findall(r'\d+',str(p)))))[-1])
  raise RuntimeError('Install Blender or set BLENDER_BIN; no global installation is performed.')
-def snapshot(session):
- if not session:return {'status':'unavailable','tokens':None}
- result={'status':'unavailable','tokens':None,'source':str(Path(session).resolve())}
- try:
-  for line in Path(session).open(encoding='utf-8'):
-   try:e=json.loads(line)
-   except json.JSONDecodeError:continue
-   p=e.get('payload',{})
-   if e.get('type')=='turn_context':result['model']=p.get('model')
-   if p.get('type')=='token_count' and p.get('info',{}):
-    tokens=p['info'].get('total_token_usage')
-    if tokens:result.update(status='observed',tokens=tokens,through=e.get('timestamp'))
- except OSError as e:result['reason']=str(e)
- return result
 def run_path(name):
  p=(ROOT/'runs'/name).resolve()
  if p.parent!=(ROOT/'runs').resolve():raise ValueError('Run must be a direct child of runs/')
  return p
 def report(run,m):
- m['updated']=now()
- stop=dt.datetime.fromisoformat(m['completed']) if m.get('completed') else dt.datetime.now(dt.timezone.utc)
- m['wall_seconds']=(stop-dt.datetime.fromisoformat(m['created'])).total_seconds()
- end=m.get('usage_end',{}) if m.get('usage_frozen') else snapshot(m.get('session_log'));start=m['usage_start'];m['usage_end']=end
- if m.get('completed'):m['usage_frozen']=True
- if start.get('tokens') and end.get('tokens'):
-  delta={k:v-start['tokens'].get(k,0) for k,v in end['tokens'].items()}
-  m['token_usage']=delta if all(v>=0 for v in delta.values()) else None
- else:m['token_usage']=None
- m['token_scope']='shared session interval from run creation through last flushed event; may include other work; cached/reasoning counts are subsets; not billing'
- m['target_exceeded']=m['wall_seconds']>m['defaults']['target_minutes']*60
  write(run/'manifest.json',m)
- lines=[f'# {m["name"]}',f'\n요청: {m["request"]}',f'\n상태: {m["status"]} / 품질: {m.get("quality","not_reviewed")}',f'\n경과 시간: {m["wall_seconds"]:.1f}초. 기본 목표 {m["defaults"]["target_minutes"]}분은 소프트 목표.',f'\n토큰: {json.dumps(m["token_usage"],ensure_ascii=False) if m["token_usage"] is not None else "미계측"}. 공유 세션 구간값이며 캐시 입력을 중복 합산하지 않는다.', '\n| 단계 | 명령 경과 시간 | 상태 |','| --- | ---: | --- |']
+ lines=[f'# {m["name"]}',f'\n요청: {m["request"]}',f'\n상태: {m["status"]} / 품질: {m.get("quality","not_reviewed")}','\n| 단계 | 상태 |','| --- | --- |']
  for rev in m['revisions']:
-  lines.append(f'| {rev["id"]} | {rev.get("seconds",0):.2f}초 | {rev["status"]} |')
-  if 'verification_seconds' in rev:lines.append(f'| {rev["id"]} 재열기 | {rev["verification_seconds"]:.2f}초 | {rev.get("verification",{}).get("status","failed")} |')
+  lines.append(f'| {rev["id"]} | {rev["status"]} |')
  for rev in m['revisions']:
   lines.append('\n## '+rev['id'])
   if rev.get('preview_paths'):
@@ -68,14 +41,14 @@ def report(run,m):
    lines.append('\n시안 필수 항목: '+', '.join(k+'='+v['status'] for k,v in visual['requirements'].items()))
    lines.append('\n미해결 시각 결함: '+(', '.join(k for k,v in visual['defects'].items() if v['status']=='open') or '없음'))
   if rev.get('surface_reference_quality'):
-   q=rev['surface_reference_quality'];lines.append(f'\n연결·시안 수치 검사: {q["passed"]} · [확대/기준점 비교]({q["report"]})')
+   q=rev['surface_reference_quality'];lines.append(f'\n연결·시안 수치 검사: {q["passed"]} · [수치 검사 기록]({q["evidence_json"]})')
  (run/'report.md').write_text('\n'.join(lines)+'\n',encoding='utf-8')
  (ROOT/'runs'/'CURRENT.md').write_text(f'# 최근 제작\n\n[{m["name"]}]({run.name}/report.md) · {m["status"]}\n\n원본: [{run.name}/manifest.json]({run.name}/manifest.json)\n',encoding='utf-8')
 def launch(run,m,job):
  job_path=run/'logs'/f'{job["id"]}_job.json';write(job_path,job)
- log=run/'logs'/f'{job["id"]}.log';started=time.perf_counter()
+ log=run/'logs'/f'{job["id"]}.log'
  command=[runtime(),'--background','--factory-startup','--python-exit-code','1','--python',str(ROOT/'harness/worker.py'),'--',str(job_path)]
- entry={'id':job['id'],'phase':job['phase'],'status':'running','started':now(),'source_sha256':sha(run/job['source']) if job.get('source') else None}
+ entry={'id':job['id'],'phase':job['phase'],'status':'running','source_sha256':sha(run/job['source']) if job.get('source') else None}
  entry['implementation_sha256']={p.name:sha(p) for p in (ROOT/'harness').glob('*.py')}
  entry['content_stage']=job.get('content_stage',job['phase'])
  m['revisions'].append(entry);m['status']='running';report(run,m)
@@ -89,7 +62,7 @@ def launch(run,m,job):
  except Exception as e:
   entry.update(status='failed',error=str(e));m['status']='failed';raise
  finally:
-  entry['seconds']=time.perf_counter()-started;entry['ended']=now();report(run,m)
+  report(run,m)
  return entry
 def selected(m,rid):
  return next(r for r in m['revisions'] if r['id']==rid)
@@ -109,7 +82,7 @@ def require_review(run,rev):
 def main():
  p=argparse.ArgumentParser(description=__doc__);sub=p.add_subparsers(dest='cmd',required=True)
  sub.add_parser('doctor')
- new=sub.add_parser('new');new.add_argument('--name',required=True);new.add_argument('--request',required=True);new.add_argument('--reference',action='append',default=[]);new.add_argument('--session-log');new.add_argument('--dimensions',nargs=3,type=float);new.add_argument('--target-minutes',type=float)
+ new=sub.add_parser('new');new.add_argument('--name',required=True);new.add_argument('--request',required=True);new.add_argument('--reference',action='append',default=[]);new.add_argument('--dimensions',nargs=3,type=float)
  new.add_argument('--quality-plan')
  stage=sub.add_parser('stage');stage.add_argument('--run',required=True);stage.add_argument('--phase',choices=['body','detail','edit'],required=True);stage.add_argument('--source',required=True);stage.add_argument('--base');stage.add_argument('--targets',nargs='+');stage.add_argument('--views',nargs='+',choices=['hero','front','side','back'])
  review=sub.add_parser('review');review.add_argument('--run',required=True);review.add_argument('--revision',required=True);review.add_argument('--decision',choices=['pass','partial','revise'],required=True);review.add_argument('--notes',required=True);review.add_argument('--reviewer',default='agent')
@@ -138,6 +111,7 @@ def main():
   elif a.cmd=='install':files=source_payload(ROOT)
   else:raise ValueError('No update repository configured; provide --repo owner/repo or --package NEW.zip')
   print(json.dumps(install(project,files,update=a.cmd=='update',dry_run=a.dry_run,repository=repo),ensure_ascii=False,indent=2));return
+ # doctor: Blender 실행 파일 경로, 애드온 dispatcher 파일 존재 여부와 기본 설정을 출력한다. 설치·복구는 수행하지 않는다.
  if a.cmd=='doctor':
   print(json.dumps({'blender':runtime(),'addon_present':(ROOT/'vendor/blenderwright/addon/dispatcher.py').is_file(),'defaults':read(ROOT/'harness/defaults.json'),'mode':'agent-guided official handlers via isolated CLI; not autonomous NLP or MCP transport'},ensure_ascii=False));return
  if a.cmd=='bundle':
@@ -150,9 +124,6 @@ def main():
   if settings.get('visual_gate_required'):validate_requirements(plan,len(a.reference))
   for path in a.reference:
    if not Path(path).is_file():raise FileNotFoundError(path)
-  if a.target_minutes is not None:
-   if a.target_minutes<=0:raise ValueError('Target must be positive')
-   settings['target_minutes']=a.target_minutes
   if a.dimensions and any(x<=0 for x in a.dimensions):raise ValueError('Dimensions must be positive metres')
   rid=dt.datetime.now().strftime('%Y%m%d-%H%M%S')+'-'+re.sub(r'[^a-zA-Z0-9_-]','-',a.name)[:35]+'-'+uuid.uuid4().hex[:6]
   run=run_path(rid);run.mkdir(parents=True)
@@ -162,8 +133,7 @@ def main():
    src=Path(path).resolve()
    if not src.is_file():raise FileNotFoundError(src)
    dest=run/'input'/f'ref_{i:02d}{src.suffix.lower()}';shutil.copy2(src,dest);refs.append({'path':str(dest.relative_to(run)),'sha256':sha(dest)})
-  session=a.session_log or os.environ.get('HARNESS_SESSION_LOG')
-  m={'schema_version':1,'name':a.name,'request':a.request,'created':now(),'status':'initialized','quality':'not_reviewed','defaults':settings,'dimensions_m':a.dimensions,'references':refs,'revisions':[],'session_log':str(Path(session).resolve()) if session else None,'usage_start':snapshot(session)}
+  m={'schema_version':1,'name':a.name,'request':a.request,'status':'initialized','quality':'not_reviewed','defaults':settings,'dimensions_m':a.dimensions,'references':refs,'revisions':[]}
   if plan is not None:
    write(run/'input/quality-plan.json',plan);m['quality_plan']={'path':'input/quality-plan.json','sha256':sha(run/'input/quality-plan.json')}
   report(run,m);print(rid);return
@@ -174,7 +144,7 @@ def main():
   if sha(run/qp['path'])!=qp['sha256']:raise ValueError('Quality plan changed; start a new run instead of moving the acceptance criteria')
   plan=validate_quality_plan(read(run/qp['path']),len(m['references']))
   if m['defaults'].get('visual_gate_required'):validate_requirements(plan,len(m['references']))
- if a.cmd=='status':report(run,m);print(json.dumps({'run':a.run,'status':m['status'],'revisions':[{k:r.get(k) for k in ['id','phase','status','seconds']} for r in m['revisions']],'tokens':m['token_usage']},ensure_ascii=False));return
+ if a.cmd=='status':report(run,m);print(json.dumps({'run':a.run,'status':m['status'],'revisions':[{k:r.get(k) for k in ['id','phase','status']} for r in m['revisions']]},ensure_ascii=False));return
  if m['status']=='completed' and a.cmd in ['stage','review']:raise ValueError('Completed run is immutable; start a new run for further work')
  if a.cmd=='review':
   rev=selected(m,a.revision)
@@ -186,15 +156,15 @@ def main():
   if m['defaults'].get('visual_gate_required'):
    if not a.visual_review:raise ValueError('Provide --visual-review JSON with per-feature image comparisons and defect resolutions')
    visual=evaluate_visual(run,m,rev,plan,read(a.visual_review),a.decision)
-  rev['review']={'decision':a.decision,'notes':a.notes,'reviewer':a.reviewer,'timestamp':now(),'blend_sha256':sha(run/rev['blend']),'preview_hashes':{im:sha(run/im) for im in rev['preview_paths']}}
+  rev['review']={'decision':a.decision,'notes':a.notes,'reviewer':a.reviewer,'blend_sha256':sha(run/rev['blend']),'preview_hashes':{im:sha(run/im) for im in rev['preview_paths']}}
   if plan is not None:
-   q=rev['surface_reference_quality'];rev['review'].update(surface_notes=a.surface_notes,reference_notes=a.reference_notes,evidence_hashes={p:sha(run/p) for p in [q['report'],q['evidence_json']]})
+   q=rev['surface_reference_quality'];rev['review'].update(surface_notes=a.surface_notes,reference_notes=a.reference_notes,evidence_hashes={p:sha(run/p) for p in [q['evidence_json']]})
   if visual is not None:
    rev['review']['visual']=visual
    m['visual_requirements']=visual['requirements'];m['visual_defects']=visual['defects'];m['visual_latest_revision']=rev['id']
   rev['status']='reviewed' if a.decision!='revise' else 'needs_revision'
   m['status']='completed' if rev['phase']=='final' and a.decision=='pass' else 'needs_revision' if a.decision=='revise' or rev['phase']=='final' else 'ready'
-  if m['status']=='completed':m['quality']='passed' if a.decision=='pass' else 'partial';m['delivered_blend']=rev['blend'];m['completed']=now()
+  if m['status']=='completed':m['quality']='passed' if a.decision=='pass' else 'partial';m['delivered_blend']=rev['blend']
   report(run,m);print(m['status']);return
  base=None
  if getattr(a,'base',None):
@@ -227,7 +197,7 @@ def main():
  rev=launch(run,m,job)
  if phase=='final':
   check=dict(job,id=revision+'_verify',phase='verify',base=rev['blend'],receipt=f'logs/{revision}_verify.json')
-  path=run/'logs'/f'{check["id"]}_job.json';write(path,check);started=time.perf_counter()
+  path=run/'logs'/f'{check["id"]}_job.json';write(path,check)
   try:
    with (run/'logs'/f'{check["id"]}.log').open('w',encoding='utf-8') as log:
     result=subprocess.run([runtime(),'--background','--factory-startup','--python-exit-code','1','--python',str(ROOT/'harness/worker.py'),'--',str(path)],stdout=log,stderr=subprocess.STDOUT,timeout=60)
@@ -235,7 +205,7 @@ def main():
    if result.returncode or verification.get('status')!='succeeded':raise RuntimeError('Saved-file verification failed; see logs')
    rev['verification']=verification
   except Exception as e:rev['status']='failed';m['status']='failed';rev['error']=str(e);raise
-  finally:rev['verification_seconds']=time.perf_counter()-started;report(run,m)
+  finally:report(run,m)
  m['status']='awaiting_review';report(run,m);print(json.dumps({'revision':rev['id'],'blend':rev.get('blend'),'previews':rev.get('preview_paths'),'status':m['status']},ensure_ascii=False))
 if __name__=='__main__':
  try:main()

@@ -113,9 +113,9 @@ class VisualGateTests(unittest.TestCase):
 
     def test_cli_final_partial_never_completes(self):
         # Exercise real CLI persistence, not only the helper decision function.
-        self.manifest.update(name='fixture', request='fixture', created=cli.now(), status='awaiting_review', usage_start={'tokens': None}, defaults={'target_minutes':15})
+        self.manifest.update(name='fixture', request='fixture', status='awaiting_review', defaults={})
         self.rev.update(phase='final', status='awaiting_review')
-        self.rev['surface_reference_quality']['report'] = 'fixture-quality.html'
+        self.rev['surface_reference_quality']['evidence_json'] = 'fixture-quality.json'
         self.manifest.pop('visual_latest_revision', None)
         cli.write(self.root/'manifest.json', self.manifest)
         with patch.object(cli, 'run_path', return_value=self.root), patch.object(cli, 'ROOT', self.root.parent.parent), patch.object(sys, 'argv', ['cli','review','--run','fixture','--revision',self.rev['id'],'--decision','partial','--notes','Visible flaw remains']):

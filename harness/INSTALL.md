@@ -21,7 +21,7 @@ MyGame/
   .blender-harness/
     harness.ps1
     AGENTS.md               # 하네스 폴더 전용 규칙
-    harness/                # 공통 실행·검수·설치기
+    harness/                # 공통 실행·검수·설치기 및 skill-*.md 규칙 문서
     templates/
     vendor/
     .install.json           # 설치 버전·배포 파일 해시·저장소
@@ -70,3 +70,7 @@ MyGame/
 4. Release 성공을 확인한 뒤 설치 프로젝트에서 `check-update`와 `update`를 실행한다.
 
 GitHub API 근거: [Releases](https://docs.github.com/en/rest/releases/releases), [Release assets](https://docs.github.com/en/rest/releases/assets).
+
+## 동봉 스킬
+
+`harness/skill-blender-workflow.md`, `skill-zepeto-asset-pipeline.md`, `skill-zepeto-unity-workflow.md`를 배포에 포함한다. 하네스는 WORKFLOW의 링크를 통해 해당 문서를 읽는다. 프로젝트 설치·업데이트로 함께 관리하며 전역 스킬 폴더를 자동 덮어쓰지 않는다. 이미지 생성 단계는 실행 환경의 `imagegen` 스킬·툴을 사용한다.

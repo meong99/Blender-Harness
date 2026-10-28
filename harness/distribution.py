@@ -128,6 +128,7 @@ def agent_block(newline=b'\n'):
 - 실행: 프로젝트 루트에서 `.\\.blender-harness\\harness.ps1` 또는 `python3 .blender-harness/harness/cli.py`. 결과는 `.blender-harness/runs/`에 기록한다.
 - 대상·참고 이미지·달라지는 조건만 받아 제작한다. 모델 오브젝트 수와 실제 메시 연결 여부를 구분하고, 지정된 분리 조건을 지킨다.
 - 이 관리 구역은 설치기가 갱신한다. 프로젝트별 추가 규칙은 구역 밖에 쓴다. 기존 문서를 통째로 대체하지 않는다.
+- 하네스는 사용자와 함께 수정하며, 보고 없이 임의로 수정하지 않는다.
 <!-- blender-modeling-harness:end -->'''
     return text.encode('utf-8').replace(b'\n', newline)
 

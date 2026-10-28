@@ -1,5 +1,5 @@
 """Blender evaluated-topology checks and fixed-camera evidence; no automatic visual judge."""
-import bpy,bmesh,math,html,json
+import bpy,bmesh,math,json
 from mathutils import Vector
 from bpy_extras.object_utils import world_to_camera_view
 
@@ -69,15 +69,4 @@ def evidence(plan,run,job,render,clay):
   scene.camera,scene.render.resolution_x,scene.render.resolution_y,scene.cycles.samples,bpy.context.view_layer.material_override=old
  result['visual_review_required']=True
  out=run/'logs'/f'{job["id"]}_quality.json';out.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
- panels=[]
- for row in result['views']:
-  v=row['camera'];ref=''
-  if v.get('reference_index') is not None:ref=f'<figure><img src="{html.escape(job["references"][v["reference_index"]]["path"].replace(chr(92),"/"))}"><figcaption>Reference</figcaption></figure>'
-  dots=[]
-  for m in row['landmarks']:
-   if 'actual_uv' not in m:continue
-   x,y=m['actual_uv'];tx,ty=m['target_uv'];dots.append(f'<line x1="{x*640}" y1="{y*640}" x2="{tx*640}" y2="{ty*640}" stroke="#f80"/><circle cx="{tx*640}" cy="{ty*640}" r="5" fill="none" stroke="#0f9"/><circle cx="{x*640}" cy="{y*640}" r="3" fill="#f80"/>')
-  panels.append(f'<h2>{html.escape(row["name"])}</h2><div class="pair">{ref}<figure><svg viewBox="0 0 640 640"><image href="{row["preview"]}" width="640" height="640"/>{"".join(dots)}</svg><figcaption>Measured (orange), target (green)</figcaption></figure></div>')
- page=f'<!doctype html><meta charset="utf-8"><title>Surface and reference review</title><style>body{{font:16px system-ui;background:#202329;color:#eee;max-width:1300px;margin:30px auto}}.pair{{display:flex}}figure{{margin:10px;width:48%}}img,svg{{width:100%}}pre{{white-space:pre-wrap}}</style><h1>{html.escape(job["id"])}</h1><p>Numerical checks: {result["passed"]}. Visual review still required. Fixed cameras; no automatic reference reconstruction.</p>{"".join(panels)}<pre>{html.escape(json.dumps(result,ensure_ascii=False,indent=2))}</pre>'
- rel=f'{job["id"]}_quality.html';(run/rel).write_text(page,encoding='utf-8')
- result['report']=rel;result['evidence_json']=str(out.relative_to(run));return result,previews
+ result['evidence_json']=str(out.relative_to(run));return result,previews

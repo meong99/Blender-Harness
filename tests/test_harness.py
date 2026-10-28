@@ -17,9 +17,6 @@ class HarnessTests(unittest.TestCase):
   for name in ['../escape','nested/child',str(Path.cwd().parent)]:
    with self.assertRaises(ValueError):cli.run_path(name)
 
- def test_missing_usage_is_unknown(self):
-  self.assertIsNone(cli.snapshot(None)['tokens'])
-
  def test_repaired_body_can_continue_to_detail(self):
   with fixture_directory() as root:
    (root/'logs').mkdir()
@@ -27,16 +24,6 @@ class HarnessTests(unittest.TestCase):
    edit={'id':'002_edit','phase':'edit','blend':'native/002_edit.blend'}
    cli.write(root/'logs/002_edit_job.json',{'base':body['blend']})
    self.assertEqual(cli.content_stage(root,{'revisions':[body,edit]},edit),'body')
-
- def test_usage_and_completed_time_freeze(self):
-  with fixture_directory() as tmp:
-   root=Path(tmp);run=root/'runs/test';run.mkdir(parents=True)
-   m={'name':'test','request':'test','created':'2026-10-03T01:00:00+00:00','completed':'2026-10-03T01:01:00+00:00','status':'completed','defaults':{'target_minutes':15},'usage_start':{'tokens':{'total_tokens':100,'cached_input_tokens':50}},'revisions':[]}
-   with patch.object(cli,'ROOT',root),patch.object(cli,'snapshot',return_value={'tokens':{'total_tokens':150,'cached_input_tokens':80}}):cli.report(run,m)
-   self.assertEqual(m['wall_seconds'],60)
-   self.assertEqual(m['token_usage'],{'total_tokens':50,'cached_input_tokens':30})
-   with patch.object(cli,'ROOT',root),patch.object(cli,'snapshot',side_effect=AssertionError('must not read again')):cli.report(run,m)
-   self.assertEqual(m['wall_seconds'],60)
 
  def test_review_rejects_changed_evidence(self):
   with fixture_directory() as tmp:

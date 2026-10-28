@@ -1,5 +1,5 @@
 """Blender-only worker. All runs use a separate factory-startup process."""
-import bpy,bmesh,sys,json,hashlib,time,math
+import bpy,bmesh,sys,json,hashlib,math
 from pathlib import Path
 from mathutils import Vector
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'vendor/blenderwright'))
@@ -11,8 +11,8 @@ run=Path(job['run']);records=[]
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 def dump(p,value):Path(p).write_text(json.dumps(value,ensure_ascii=False,indent=2),encoding='utf-8')
 def call(name,params):
- start=time.perf_counter();result=dispatcher.dispatch(name,params)
- records.append({'command':name,'seconds':time.perf_counter()-start,'params':{k:hashlib.sha256(v.encode()).hexdigest() if k=='code' else v for k,v in params.items()},'status':result['status']})
+ result=dispatcher.dispatch(name,params)
+ records.append({'command':name,'params':{k:hashlib.sha256(v.encode()).hexdigest() if k=='code' else v for k,v in params.items()},'status':result['status']})
  dump(run/'logs'/f'{job["id"]}_commands.json',records)
  if result['status']!='ok':raise RuntimeError(str(result))
  if name=='execute_code' and result.get('result',{}).get('success') is False:raise RuntimeError(str(result))
