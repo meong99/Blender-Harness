@@ -64,10 +64,12 @@ MyGame/
 
 ## 유지보수자가 새 버전 배포하기
 
+하네스 규칙은 사용자와 변경 내용과 적용 범위를 협의해 추가·수정한다. 합의한 규칙을 공식 저장소에 업로드할 때는 문서만 변경해도 항상 버전을 올리고 변경 이력을 작성한다. 동일한 버전의 태그와 설치 가능한 정식 Release를 발행하고 기존 설치에서 새 버전이 감지되는지 확인한다.
+
 1. `harness/defaults.json`의 version과 CHANGELOG/관련 규칙을 함께 갱신한다.
 2. 테스트 후 코드 변경을 저장소에 커밋하고 같은 버전의 `vX.Y.Z` 태그를 푸시한다.
 3. `.github/workflows/release.yml`이 테스트, bundle, GitHub Release 생성을 수행한다. 하네스 코드·규칙·예제·백엔드·라이선스만 ZIP에 포함한다.
-4. Release 성공을 확인한 뒤 설치 프로젝트에서 `check-update`와 `update`를 실행한다.
+4. Release 성공을 확인한 뒤 기존 설치에서 `check-update`로 새 버전 감지를 검증한다. 해당 설치에 적용하는 것은 사용자가 승인한 경우에만 진행한다.
 
 GitHub API 근거: [Releases](https://docs.github.com/en/rest/releases/releases), [Release assets](https://docs.github.com/en/rest/releases/assets).
 

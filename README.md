@@ -1,6 +1,6 @@
 # Blender Modeling Harness
 
-현재 버전: **1.2.0**. 기존 프로젝트의 AGENTS.md를 보존하는 설치·병합과 GitHub Release 업데이트를 지원한다. [설치·업데이트 안내](harness/INSTALL.md) · [변경 이력](harness/CHANGELOG.md). 연결 표면·분리 부품과 고정 카메라 시안 검수는 v1.1 규칙을 유지한다.
+현재 버전: **1.4.1**. 기존 프로젝트의 AGENTS.md를 보존하는 설치·병합과 GitHub Release 업데이트를 지원한다. [설치·업데이트 안내](harness/INSTALL.md) · [변경 이력](harness/CHANGELOG.md). 연결 표면·분리 부품과 고정 카메라 시안 검수는 v1.1 규칙을 유지한다.
 
 이 폴더를 코딩 에이전트에서 열고, 참고 이미지를 첨부해 **“이 사진처럼 만들어줘”**라고 요청한다. 원하는 크기나 특별한 조건이 있을 때만 덧붙이면 된다. 에이전트는 AGENTS.md를 읽고 공통 실행기로 제작·검수·기록한다.
 
@@ -26,6 +26,6 @@ blenderwright → 몸체 3시점 검수 → 디테일 → 필요한 부위 수�
 
 결과는 `runs/<실행명>/`에 저장한다. `runs/CURRENT.md`에서 최근 결과, 프리뷰, 단계별 시간, 검수 기록으로 이동한다.
 
-기존 프로젝트에는 ZIP을 프로젝트 밖에 푼 뒤 `.\harness.ps1 install --project 'C:\MyGame' --repo meong99/Blender-Harness`를 실행한다. 프로젝트 루트에 ZIP 파일들을 덮어쓰지 않는다. 이후 프로젝트 안에서 `.\.blender-harness\harness.ps1 update`로 새 Release를 적용한다. 기존 모델·참고 사진·세션 로그·다른 후보 런타임은 ZIP에 포함하지 않는다.
+기존 프로젝트에는 ZIP을 프로젝트 밖에 푼 뒤 `.\harness.ps1 install --project 'C:\MyGame' --repo meong99/Blender-Harness`를 실행한다. 프로젝트 루트에 ZIP 파일들을 덮어쓰지 않는다. 이후 작업을 시작하거나 재개할 때 먼저 `check-update`로 최신 정식 버전을 확인한다. 새 버전이 있으면 변경 내용과 적용 범위를 설명하고 사용자 승인을 받은 후 프로젝트 안에서 `.\.blender-harness\harness.ps1 update`로 새 Release를 적용한다. 기존 모델·참고 사진·세션 로그·다른 후보 런타임은 ZIP에 포함하지 않는다.
 
 실행 규칙: [WORKFLOW](harness/WORKFLOW.md) · 설정: [defaults.json](harness/defaults.json)

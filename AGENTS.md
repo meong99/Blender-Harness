@@ -6,6 +6,8 @@
 
 ## 시작과 기본값
 
+- 시작·재개할 때 먼저 [사용 전 버전 확인](harness/WORKFLOW.md#0-사용-전-버전-확인)을 수행하고 새 정식 버전은 사용자 승인 후 적용한다.
+
 - 시작 시 `harness/WORKFLOW.md`, `harness/defaults.json`을 읽는다. 이어서 진행할 때만 `runs/CURRENT.md`와 해당 manifest를 확인한다. 과거 비교 자료는 필요할 때 읽는다.
 - 기본 백엔드는 blenderwright, 범위는 Blender 제작이다. Unity 검증·내보내기는 요청할 때 추가한다.
 - 자연어 해석과 모델별 형상 코드는 에이전트가 작성한다. 공통 실행은 `harness.ps1` 또는 `python3 harness/cli.py`를 사용한다. 모델마다 실행기·스튜디오·보고기를 새로 만들지 않는다.
@@ -25,6 +27,8 @@
 - 부분 충족은 partial, 실행 실패는 failed로 남긴다.
 
 ## 기록과 문서
+
+- 하네스 규칙은 사용자와 변경 내용과 적용 범위를 협의해 추가·수정한다. 합의한 규칙을 공식 저장소에 업로드할 때는 문서만 변경해도 항상 버전을 올리고 변경 이력을 작성한다. 동일한 버전의 태그와 설치 가능한 정식 Release를 발행하고 기존 설치에서 새 버전이 감지되는지 확인한다.
 
 - 다른 프로젝트에는 install 명령으로 `.blender-harness/`에 격리 설치한다. 루트 AGENTS.md 기존 내용을 보존하고 하네스 관리 구역만 병합한다. GitHub Release 업데이트는 check-update/update를 사용하며 동일 파일의 로컬/배포 변경 충돌을 덮어쓰지 않는다. 자세한 절차는 `harness/INSTALL.md`를 따른다.
 - 실행별 manifest/report와 runs/CURRENT는 CLI가 갱신한다. 프리뷰·소스·버전·검수·실패 증거를 보존한다.

@@ -1,5 +1,5 @@
 {
-  "version": "1.4.0",
+  "version": "1.4.1",
   "backend": "blenderwright",
   "backend_commit": "987a12266f19e9dfd57704541d2c22429dbb1445",
   "scope": "blender_only",

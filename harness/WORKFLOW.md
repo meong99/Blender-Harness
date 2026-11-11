@@ -1,4 +1,12 @@
-# 공통 제작 절차 v1.4.0
+# 공통 제작 절차 v1.4.1
+
+## 0. 사용 전 버전 확인
+
+모델링 하네스로 작업을 시작하거나 이전 작업을 재개할 때는 시안 준비, Blender 연결, 제작 명령보다 먼저 설치된 하네스의 `check-update`를 한 번 실행한다. 프로젝트 루트에서는 `python .blender-harness/harness/cli.py check-update`를 사용한다. 이 명령은 설치 버전과 설정된 저장소의 최신 정식 GitHub Release를 비교한다.
+
+- `update_available`이 참이면 현재 버전과 새 버전, 릴리스의 주요 변경 내용과 이 프로젝트에 적용될 범위를 알려주고 “새 버전으로 업데이트할까요?”라고 묻는다. 답변을 받을 때까지 업데이트를 보류한다.
+- 사용자가 승인하면 안내한 버전을 확인하고 적용한 뒤 설치 버전을 검증한다. 사용자가 거절하거나 보류하면 현재 버전으로 작업한다.
+- 새 버전이 없으면 바로 작업한다. 조회가 실패하면 원인을 알리고 현재 설치 버전으로 진행한다. 자동 업데이트는 비활성 상태로 유지한다.
 
 ## 1. 공통 작업 규칙과 진행 순서
 
@@ -125,4 +133,4 @@ manifest.json, report.md, runs/CURRENT.md는 명령 실행 시 자동 갱신된�
 
 
 
-`bundle --out dist/blenderwright-harness-v1.4.0.zip`은 규칙·설정·코드·예제·blenderwright addon 및 라이선스만 묶는다. 참조·사용자 결과·세션 로그·Blender 실행 파일·다른 후보 설치는 제외한다. ZIP 내부 PACKAGE.json과 옆 manifest에 포함 파일과 해시가 저장된다. GitHub 태그와 defaults.json의 버전이 같을 때 Release workflow가 테스트 후 이 ZIP을 배포한다.
+`bundle --out dist/blenderwright-harness-v1.4.1.zip`은 규칙·설정·코드·예제·blenderwright addon 및 라이선스만 묶는다. 참조·사용자 결과·세션 로그·Blender 실행 파일·다른 후보 설치는 제외한다. ZIP 내부 PACKAGE.json과 옆 manifest에 포함 파일과 해시가 저장된다. GitHub 태그와 defaults.json의 버전이 같을 때 Release workflow가 테스트 후 이 ZIP을 배포한다.
