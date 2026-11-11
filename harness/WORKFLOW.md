@@ -1,12 +1,12 @@
-# 공통 제작 절차 v1.4.1
+# 공통 제작 절차 v1.4.2
 
 ## 0. 사용 전 버전 확인
 
-모델링 하네스로 작업을 시작하거나 이전 작업을 재개할 때는 시안 준비, Blender 연결, 제작 명령보다 먼저 설치된 하네스의 `check-update`를 한 번 실행한다. 프로젝트 루트에서는 `python .blender-harness/harness/cli.py check-update`를 사용한다. 이 명령은 설치 버전과 설정된 저장소의 최신 정식 GitHub Release를 비교한다.
+모델링 작업 시작·재개 시 설치본의 `.blender-harness/.install.json`에서 repository와 version을 읽는다. GitHub 읽기 연결 도구(예: github_fetch)로 `https://api.github.com/repos/<repository>/releases/latest`만 조회한다. 응답이 정식 릴리스(draft=false, prerelease=false)인지 확인하고 tag_name을 로컬에서 비교한다.
 
-- `update_available`이 참이면 현재 버전과 새 버전, 릴리스의 주요 변경 내용과 이 프로젝트에 적용될 범위를 알려주고 “새 버전으로 업데이트할까요?”라고 묻는다. 답변을 받을 때까지 업데이트를 보류한다.
-- 사용자가 승인하면 안내한 버전을 확인하고 적용한 뒤 설치 버전을 검증한다. 사용자가 거절하거나 보류하면 현재 버전으로 작업한다.
-- 새 버전이 없으면 바로 작업한다. 조회가 실패하면 원인을 알리고 현재 설치 버전으로 진행한다. 자동 업데이트는 비활성 상태로 유지한다.
+- `python .blender-harness/harness/cli.py check-update --latest-tag <tag_name>`은 네트워크를 사용하지 않고 숫자 버전을 비교한다. 같거나 설치본이 앞서면 권한 요청 없이 바로 작업한다.
+- 새 버전일 때만 현재·최신 버전, 변경 내용과 적용 범위를 설명하고 업데이트 승인을 묻는다. 승인 후에만 필요한 다운로드 권한을 요청하고 `update --expected-version X.Y.Z`를 실행한 뒤 설치 버전을 확인한다. 거절하면 현재 설치본으로 작업한다.
+- 연결 도구가 없거나 조회가 실패하면 최신 버전 미확인으로 알리고 현재 설치본으로 작업한다. 조회만을 위해 셸 네트워크 권한을 요청하거나 자동 설치하지 않는다.
 
 ## 1. 공통 작업 규칙과 진행 순서
 
@@ -133,4 +133,4 @@ manifest.json, report.md, runs/CURRENT.md는 명령 실행 시 자동 갱신된�
 
 
 
-`bundle --out dist/blenderwright-harness-v1.4.1.zip`은 규칙·설정·코드·예제·blenderwright addon 및 라이선스만 묶는다. 참조·사용자 결과·세션 로그·Blender 실행 파일·다른 후보 설치는 제외한다. ZIP 내부 PACKAGE.json과 옆 manifest에 포함 파일과 해시가 저장된다. GitHub 태그와 defaults.json의 버전이 같을 때 Release workflow가 테스트 후 이 ZIP을 배포한다.
+`bundle --out dist/blenderwright-harness-v1.4.2.zip`은 규칙·설정·코드·예제·blenderwright addon 및 라이선스만 묶는다. 참조·사용자 결과·세션 로그·Blender 실행 파일·다른 후보 설치는 제외한다. ZIP 내부 PACKAGE.json과 옆 manifest에 포함 파일과 해시가 저장된다. GitHub 태그와 defaults.json의 버전이 같을 때 Release workflow가 테스트 후 이 ZIP을 배포한다.

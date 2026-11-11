@@ -33,15 +33,13 @@ MyGame/
 
 ## 다음 버전 받기
 
-프로젝트 루트에서:
+모델링 작업 시작·재개 시 설치본의 `.blender-harness/.install.json`에서 repository와 version을 읽는다. GitHub 읽기 연결 도구(예: github_fetch)로 `https://api.github.com/repos/<repository>/releases/latest`만 조회한다. 응답이 정식 릴리스(draft=false, prerelease=false)인지 확인하고 tag_name을 로컬에서 비교한다.
 
-```powershell
-.\.blender-harness\harness.ps1 check-update
-.\.blender-harness\harness.ps1 update --dry-run
-.\.blender-harness\harness.ps1 update
-```
+- `python .blender-harness/harness/cli.py check-update --latest-tag <tag_name>`은 네트워크를 사용하지 않고 숫자 버전을 비교한다. 같거나 설치본이 앞서면 권한 요청 없이 바로 작업한다.
+- 새 버전일 때만 현재·최신 버전, 변경 내용과 적용 범위를 설명하고 업데이트 승인을 묻는다. 승인 후에만 필요한 다운로드 권한을 요청하고 `update --expected-version X.Y.Z`를 실행한 뒤 설치 버전을 확인한다. 거절하면 현재 설치본으로 작업한다.
+- 연결 도구가 없거나 조회가 실패하면 최신 버전 미확인으로 알리고 현재 설치본으로 작업한다. 조회만을 위해 셸 네트워크 권한을 요청하거나 자동 설치하지 않는다.
 
-`check-update`는 최신 정식 Release 정보를 읽는다. `update`는 ZIP의 GitHub SHA256과 내부 파일 해시를 확인한 뒤 적용한다. 코드 커밋만 올라온 상태는 배포로 취급하지 않는다. 예약 확인·백그라운드 자동 업데이트는 없다. 사용자는 에이전트에게 “하네스 업데이트해줘”라고 말해도 된다.
+설치기는 ZIP의 SHA256과 내부 파일 해시를 검증한다. 셸에 네트워크가 허용된 환경에서는 수동 `check-update`도 지원한다.
 
 오프라인 패치:
 

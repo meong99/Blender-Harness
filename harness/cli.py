@@ -92,6 +92,8 @@ def main():
  pack=sub.add_parser('bundle');pack.add_argument('--out',required=True)
  for command in ['install','update','check-update']:
   installer=sub.add_parser(command);installer.add_argument('--project');installer.add_argument('--package');installer.add_argument('--repo');installer.add_argument('--dry-run',action='store_true')
+  if command=='check-update':installer.add_argument('--latest-tag',help='Compare a stable release tag already obtained through the GitHub connector, without network access')
+  if command=='update':installer.add_argument('--expected-version',help='Require the approved remote release version before downloading')
  a=p.parse_args()
  if a.cmd in ['install','update','check-update']:
   from distribution import source_payload, read_package, install
@@ -104,10 +106,19 @@ def main():
   if a.package and a.repo:raise ValueError('Use either a local --package or a remote --repo')
   if a.cmd=='check-update':
    if not repo:raise ValueError('No update repository configured; provide --repo owner/repo')
-   release=latest(repo);release['installed_version']=state.get('version');release['update_available']=not state or version_key(release['version'])>version_key(state['version'])
+   if a.latest_tag is not None:
+    version=a.latest_tag.removeprefix('v');version_key(version)
+    release={'repository':repo,'version':version,'tag':a.latest_tag}
+   else:release=latest(repo)
+   release['installed_version']=state.get('version');release['update_available']=not state or version_key(release['version'])>version_key(state['version'])
    print(json.dumps(release,ensure_ascii=False,indent=2));return
+  if a.cmd=='update' and a.expected_version is not None and a.package:raise ValueError('--expected-version requires a remote update')
   if a.package:files=read_package(a.package)
-  elif repo:files=download(latest(repo))
+  elif repo:
+   release=latest(repo)
+   if a.cmd=='update' and a.expected_version is not None and release['version']!=a.expected_version:
+    raise ValueError('Latest release changed; confirm the new version before downloading')
+   files=download(release)
   elif a.cmd=='install':files=source_payload(ROOT)
   else:raise ValueError('No update repository configured; provide --repo owner/repo or --package NEW.zip')
   print(json.dumps(install(project,files,update=a.cmd=='update',dry_run=a.dry_run,repository=repo),ensure_ascii=False,indent=2));return
