@@ -7,6 +7,15 @@ description: Inspect, edit, repair, export and save Blender scenes and game asse
 
 Blender에서 직접 제작한다. 승인된 시안과 아래 품질 기준을 유지한다. 신규 제작은 아래 순서로 진행하고, 기존 모델 수정·내보내기·저장은 해당 단계부터 적용한다.
 
+## 모델링 함수 작성 시 우선 규칙
+
+1. 기본 도형을 여러 개 이어 붙여 최종 형태를 만들지 않는다. 모델 메시 제작에는 기본 도형 생성 함수와 이를 감싼 헬퍼를 사용하지 않는다.
+2. 메시를 만들기 전에 시안에서 핵심 실루엣과 구조를 분석한다. 주요 부위의 비율, 단면 변화, 연결 방식을 짚는다.
+3. 분석한 구조에 맞춰 커스텀 버텍스와 면을 정의하거나 `bmesh`의 Extrude 등 메시 편집 연산으로 필요한 형상을 직접 만든다.
+4. 기본 형태가 잡히면 디테일 작업 전에 정면·측면·사선으로 중간 렌더를 만들어 확인한다.
+5. 렌더의 실루엣이 시안과 다르면 해당 메시를 수정하고 같은 시점에서 다시 비교한 뒤 디테일 작업으로 넘어간다.
+6. 매끄러운 표면을 위해 Subdivision을 일괄 적용하지 않는다. 시안의 곡률을 재현하는 데 필요한 부위에만 선택적으로 적용한다.
+
 ## 1. 작업 환경과 현재 씬 확인
 
 Read project rules and discover the actual Blender runtime and configured tools on this device. Verify the connection with a read-only call; inspect the current file path, dirty state, active scene, selection and mode. Do not replace an open unsaved scene before preserving it. Use installed tool schemas and APIs for the actual Blender version; do not install packages as part of this skill.

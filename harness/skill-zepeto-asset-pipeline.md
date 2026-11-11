@@ -22,6 +22,16 @@ Before Blender inspection, editing, export or saving, read [blender-workflow](sk
 
 ## 3. 시안 준비와 월드 스타일 비교
 
+### 모델링 기본 시안의 기준 포즈
+
+모든 모델링 기본 시안은 대상 유형에서 통상 사용하는 제작용 기본 포즈로 생성한다. 이미지 생성 전에 기준 자세와 방향을 정하고, 여러 시점의 시안에 같은 자세를 유지한다.
+
+- 인간형은 몸을 곧게 세우고 양팔을 어깨 높이에서 좌우로 편 T포즈를 기본으로 한다.
+- 동물형은 해당 종의 자연스러운 정지 자세를 따른다. 네발동물은 네 발로 고르게 서고, 서는 자세가 없는 종은 고유의 몸통과 지느러미·부속지가 잘 보이는 중립 자세를 취한다.
+- 사물·기계는 본래의 설치 방향과 조립된 정지 상태를 따른다. 살아 움직이는 프랍도 이 자세에서 몸체와 가동부의 비율·접합 위치가 보이게 한다.
+
+정해진 관례가 없는 대상은 주요 구조를 가장 잘 드러내는 안정된 자세를 기준으로 삼는다. 달리기·공격·제스처 등 동작 시안은 필요할 때 별도로 만든다.
+
 - A modeling request means producing the requested 3D asset through inspection, repair, editable-source saving and review; do not stop at another concept sheet. A concept-only request remains image-only.
 - World-based modeling follows this required order: inspect the approved world image and crop the target as a source reference; prepare clear standalone modeling concepts with the image-generation tool before new modeling; inspect those concepts; then construct the asset directly in Blender using the Blender workflow and project modeling harness. A tiny, blurred, occluded or neighbor-contaminated world crop is not a sufficient detail reference, and resizing alone does not recover missing detail. Preserve the approved design rather than inventing a new object. Reuse already adequate standalone concepts generated for the approved design.
 - References: reuse clear approved concepts. For complex or hidden construction, prepare additional consistent views when needed to resolve geometry; distinguish inferred hidden surfaces from observed features. Additional views must preserve the same object, proportions, colors and details. Inspect and repair contradictions before modeling.
